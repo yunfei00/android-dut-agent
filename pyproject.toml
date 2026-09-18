@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "android-dut-agent"
+version = "0.1.0"
+description = "Android DUT scene-control layer for instrument automation"
+requires-python = ">=3.10"
+dependencies = ["uiautomator2>=3.0,<4"]
+
+[project.scripts]
+dut-agent = "dut_agent.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
