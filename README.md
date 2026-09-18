@@ -10,33 +10,52 @@ Provide a stable Python API/CLI for controlling Android DUTs while keeping test 
 
 - ADB: device discovery and system-level actions
 - uiautomator2: UI/app automation
-- dumpsys/telecom: call and device-state observation
+- dumpsys telephony/telecom: network and call-state observation
 - Root/vendor adapters: optional fallbacks for lab DUTs
 
-## Initial scenarios
+## Current capabilities
 
-- SCREEN_ON
-- SCREEN_OFF
+- SCREEN_ON / SCREEN_OFF
 - AIRPLANE_RECONNECT
+- Cellular registration state and wait
+- Dial / answer / hang up
+- Call-state observation
 
-Planned: GSM MO/MT call, answer/hangup, app scenarios, network registration checks and reusable composite scenarios.
-
-## Install
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -e .
-```
-
-Connect a phone with USB debugging enabled, then:
+## Install with uv
 
 ```powershell
+git clone https://github.com/yunfei00/android-dut-agent.git
+cd android-dut-agent
+uv sync
 adb devices
-dut-agent status
-dut-agent screen-on
-dut-agent screen-off
-dut-agent airplane-cycle
+uv run dut-agent status
 ```
 
-> Airplane-mode control varies by Android version/vendor and permission/root state. The controller verifies state and fails explicitly instead of assuming a command succeeded.
+## Phase 2 validation
+
+```powershell
+uv run dut-agent status
+uv run dut-agent wait-network --timeout 60
+
+uv run dut-agent airplane-cycle --hold 2 --timeout 60
+uv run dut-agent status
+
+uv run dut-agent dial 10086
+uv run dut-agent status
+uv run dut-agent hangup
+```
+
+For an incoming call:
+
+```powershell
+uv run dut-agent status
+uv run dut-agent answer
+uv run dut-agent status
+uv run dut-agent hangup
+```
+
+> Android vendors expose telephony state differently. Phase 2 deliberately verifies real state and fails explicitly. Hardware validation will determine whether vendor/root adapters are needed.
+
+## Architecture boundary
+
+This repository owns DUT actions and reusable DUT scenarios. CMW500 SCPI commands, sensitivity algorithms, BLER decisions and test orchestration remain in the instrument automation project.
