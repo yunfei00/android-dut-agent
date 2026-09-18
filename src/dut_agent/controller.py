@@ -21,6 +21,10 @@ class DutController:
         self.ui.screen_off()
         self._wait_screen(False)
 
+    def home(self) -> None:
+        """DUT atomic action: press the Android Home key."""
+        self.adb.shell("input keyevent KEYCODE_HOME")
+
     def _wait_screen(self, expected: bool, timeout: float = 5.0) -> None:
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
