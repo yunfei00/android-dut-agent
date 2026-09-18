@@ -2,7 +2,6 @@ import argparse
 from dataclasses import asdict
 
 from .controller import DutController
-from .models import CallState
 from .scenarios import ScenarioName, ScenarioRunner
 
 
@@ -16,7 +15,6 @@ def main() -> None:
 
     cycle = sub.add_parser("airplane-cycle")
     cycle.add_argument("--hold", type=float, default=2.0)
-    cycle.add_argument("--timeout", type=float, default=60.0)
 
     wait_net = sub.add_parser("wait-network")
     wait_net.add_argument("--timeout", type=float, default=60.0)
@@ -42,7 +40,7 @@ def main() -> None:
     elif args.command == "screen-off":
         ScenarioRunner(dut).run(ScenarioName.SCREEN_OFF)
     elif args.command == "airplane-cycle":
-        dut.airplane_cycle(args.hold, True, args.timeout)
+        ScenarioRunner(dut).run(ScenarioName.AIRPLANE_CYCLE, hold_seconds=args.hold)
     elif args.command == "wait-network":
         dut.wait_registered(args.timeout)
     elif args.command == "dial":

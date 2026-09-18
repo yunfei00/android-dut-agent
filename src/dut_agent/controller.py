@@ -48,6 +48,12 @@ class DutController:
             time.sleep(0.2)
         raise RuntimeError("airplane mode command was not applied")
 
+    def airplane_cycle(self, hold_seconds: float = 2.0) -> None:
+        """DUT atomic action: toggle airplane mode without test-flow assumptions."""
+        self.set_airplane_mode(True)
+        time.sleep(hold_seconds)
+        self.set_airplane_mode(False)
+
     def network_state(self) -> NetworkState:
         raw = self.adb.shell("dumpsys telephony.registry")
         states = [int(x) for x in re.findall(r"mServiceState=(\d+)", raw)]
@@ -64,6 +70,7 @@ class DutController:
         return NetworkState.UNKNOWN
 
     def wait_registered(self, timeout: float = 60.0, poll: float = 1.0) -> None:
+        """Diagnostic helper only; do not use as instrument link pass/fail."""
         deadline = time.monotonic() + timeout
         last = NetworkState.UNKNOWN
         while time.monotonic() < deadline:
@@ -72,18 +79,6 @@ class DutController:
                 return
             time.sleep(poll)
         raise RuntimeError(f"cellular network did not register within {timeout:g}s; last={last.value}")
-
-    def airplane_cycle(
-        self,
-        hold_seconds: float = 2.0,
-        wait_for_network: bool = True,
-        register_timeout: float = 60.0,
-    ) -> None:
-        self.set_airplane_mode(True)
-        time.sleep(hold_seconds)
-        self.set_airplane_mode(False)
-        if wait_for_network:
-            self.wait_registered(register_timeout)
 
     def call_state(self) -> CallState:
         raw = self.adb.shell("dumpsys telecom")
