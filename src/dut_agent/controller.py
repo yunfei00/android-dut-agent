@@ -48,6 +48,12 @@ class DutController:
             time.sleep(0.2)
         raise RuntimeError("airplane mode command was not applied")
 
+    def airplane_cycle(self, hold_seconds: float = 2.0) -> None:
+        """DUT atomic action: toggle airplane mode without test-flow assumptions."""
+        self.set_airplane_mode(True)
+        time.sleep(hold_seconds)
+        self.set_airplane_mode(False)
+
     def network_state(self) -> NetworkState:
         raw = self.adb.shell("dumpsys telephony.registry")
         states = [int(x) for x in re.findall(r"mServiceState=(\d+)", raw)]
@@ -64,7 +70,7 @@ class DutController:
         return NetworkState.UNKNOWN
 
     def wait_registered(self, timeout: float = 60.0, poll: float = 1.0) -> None:
-        """Diagnostic helper only; instrument measurement remains the link-validity authority."""
+        """Diagnostic helper only; do not use as instrument link pass/fail."""
         deadline = time.monotonic() + timeout
         last = NetworkState.UNKNOWN
         while time.monotonic() < deadline:
@@ -73,25 +79,6 @@ class DutController:
                 return
             time.sleep(poll)
         raise RuntimeError(f"cellular network did not register within {timeout:g}s; last={last.value}")
-
-    def reconnect(self, hold_seconds: float = 2.0, recovery_seconds: float = 2.0) -> None:
-        """Trigger DUT radio recovery without claiming that the instrument link is valid."""
-        self.set_airplane_mode(True)
-        time.sleep(hold_seconds)
-        self.set_airplane_mode(False)
-        if recovery_seconds > 0:
-            time.sleep(recovery_seconds)
-
-    def airplane_cycle(
-        self,
-        hold_seconds: float = 2.0,
-        wait_for_network: bool = False,
-        register_timeout: float = 60.0,
-    ) -> None:
-        """Compatibility API. Prefer reconnect() for instrument-controlled test flows."""
-        self.reconnect(hold_seconds, 0.0)
-        if wait_for_network:
-            self.wait_registered(register_timeout)
 
     def call_state(self) -> CallState:
         raw = self.adb.shell("dumpsys telecom")
