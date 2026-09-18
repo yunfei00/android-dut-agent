@@ -2,7 +2,6 @@ import argparse
 from dataclasses import asdict
 
 from .controller import DutController
-from .models import CallState
 from .scenarios import ScenarioName, ScenarioRunner
 
 
@@ -14,9 +13,14 @@ def main() -> None:
     sub.add_parser("screen-on")
     sub.add_parser("screen-off")
 
+    reconnect = sub.add_parser("reconnect")
+    reconnect.add_argument("--hold", type=float, default=2.0)
+    reconnect.add_argument("--recovery", type=float, default=2.0)
+
     cycle = sub.add_parser("airplane-cycle")
     cycle.add_argument("--hold", type=float, default=2.0)
     cycle.add_argument("--timeout", type=float, default=60.0)
+    cycle.add_argument("--wait-network", action="store_true")
 
     wait_net = sub.add_parser("wait-network")
     wait_net.add_argument("--timeout", type=float, default=60.0)
@@ -41,8 +45,14 @@ def main() -> None:
         ScenarioRunner(dut).run(ScenarioName.SCREEN_ON)
     elif args.command == "screen-off":
         ScenarioRunner(dut).run(ScenarioName.SCREEN_OFF)
+    elif args.command == "reconnect":
+        ScenarioRunner(dut).run(
+            ScenarioName.AIRPLANE_RECONNECT,
+            hold_seconds=args.hold,
+            recovery_seconds=args.recovery,
+        )
     elif args.command == "airplane-cycle":
-        dut.airplane_cycle(args.hold, True, args.timeout)
+        dut.airplane_cycle(args.hold, args.wait_network, args.timeout)
     elif args.command == "wait-network":
         dut.wait_registered(args.timeout)
     elif args.command == "dial":
