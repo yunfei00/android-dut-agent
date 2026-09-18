@@ -10,14 +10,15 @@ Provide a stable Python API/CLI for controlling Android DUTs while keeping test 
 
 - ADB: device discovery and system-level actions
 - uiautomator2: UI/app automation
-- dumpsys telephony/telecom: network and call-state observation
+- dumpsys telephony/telecom: diagnostic network/call-state observation
 - Root/vendor adapters: optional fallbacks for lab DUTs
 
 ## Current capabilities
 
 - SCREEN_ON / SCREEN_OFF
 - AIRPLANE_RECONNECT
-- Cellular registration state and wait
+- Fast DUT reconnect primitive
+- Diagnostic cellular registration observation
 - Dial / answer / hang up
 - Call-state observation
 
@@ -31,15 +32,34 @@ adb devices
 uv run dut-agent status
 ```
 
-## Phase 2 validation
+## Fast reconnect
+
+For CMW500 test flows, use reconnect as a DUT recovery action:
 
 ```powershell
-uv run dut-agent status
+uv run dut-agent reconnect
+uv run dut-agent reconnect --hold 2 --recovery 3
+```
+
+The reconnect command only performs the radio recovery sequence:
+
+```text
+airplane ON -> hold -> airplane OFF -> recovery delay -> return
+```
+
+It deliberately does **not** claim the CMW500 link is valid. The instrument-side BR/BLER measurement is the authority for link validity and decides whether another reconnect attempt is required.
+
+`wait-network` remains available for diagnostics:
+
+```powershell
 uv run dut-agent wait-network --timeout 60
+```
 
-uv run dut-agent airplane-cycle --hold 2 --timeout 60
-uv run dut-agent status
+Android telephony registry state may lag the real CMW500 link state, so it must not be used as the final pass/fail criterion for instrument tests.
 
+## Call control
+
+```powershell
 uv run dut-agent dial 10086
 uv run dut-agent status
 uv run dut-agent hangup
@@ -48,14 +68,11 @@ uv run dut-agent hangup
 For an incoming call:
 
 ```powershell
-uv run dut-agent status
 uv run dut-agent answer
 uv run dut-agent status
 uv run dut-agent hangup
 ```
 
-> Android vendors expose telephony state differently. Phase 2 deliberately verifies real state and fails explicitly. Hardware validation will determine whether vendor/root adapters are needed.
-
 ## Architecture boundary
 
-This repository owns DUT actions and reusable DUT scenarios. CMW500 SCPI commands, sensitivity algorithms, BLER decisions and test orchestration remain in the instrument automation project.
+This repository owns DUT actions and reusable DUT scenarios. CMW500 SCPI commands, BR/BLER validation, sensitivity algorithms and test orchestration remain in the instrument automation project.
