@@ -20,6 +20,6 @@ class ScenarioRunner:
         elif name is ScenarioName.SCREEN_OFF:
             self.dut.screen_off()
         elif name is ScenarioName.AIRPLANE_RECONNECT:
-            self.dut.airplane_cycle()
+            self.dut.airplane_cycle(wait_for_network=True)
         else:
             raise ValueError(f"unsupported scenario: {name}")
